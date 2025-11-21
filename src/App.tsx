@@ -35,12 +35,12 @@ export default function App() {
       viewportMeta = document.createElement("meta");
       viewportMeta.name = "viewport";
       viewportMeta.content =
-        "width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes";
+        "width=device-width, initial-scale=0.7, maximum-scale=5.0, user-scalable=yes";
       document.head.appendChild(viewportMeta);
     } else {
       // Update existing viewport meta
       (viewportMeta as HTMLMetaElement).content =
-        "width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes";
+        "width=device-width, initial-scale=0.7, maximum-scale=5.0, user-scalable=yes";
     }
 
     // Add Google Fonts - Ubuntu Mono
