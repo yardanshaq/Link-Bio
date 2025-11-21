@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { musicConfig } from '../config';
+import { useState, useEffect, useRef } from "react";
+import { musicConfig } from "../config";
 
 interface Song {
   title: string;
@@ -10,6 +10,8 @@ interface Song {
 
 export const SpotifyPlayer = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const nextAudioRef = useRef<HTMLAudioElement>(null);
+  const prevAudioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -21,30 +23,69 @@ export const SpotifyPlayer = () => {
 
   const GIST_USER = musicConfig.gistUser;
   const GIST_ID = musicConfig.gistId;
-  const GIST_FILE = musicConfig.gistFile
-  const GIST_RAW_URL = `https://gist.githubusercontent.com/${GIST_USER}/${GIST_ID}/raw/${GIST_FILE}.json?t=${Date.now()}`;
+  const GIST_FILE = musicConfig.gistFile;
 
-  // Fetch songs from Gist
+  // Preload images for instant display
+  const preloadImages = (songs: Song[]) => {
+    songs.forEach((song) => {
+      const img = new Image();
+      img.src = song.albumArtUrl;
+    });
+  };
+
+  // Fetch songs from Gist with fast loading
   useEffect(() => {
     const fetchSongs = async () => {
       try {
-        const response = await fetch(GIST_RAW_URL);
-        const data = await response.json();
-        
+        // Use GitHub Gist API to get the raw content
+        const apiUrl = `https://api.github.com/gists/${GIST_ID}`;
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+          throw new Error(
+            `HTTP error! status: ${response.status}`,
+          );
+        }
+
+        const gistData = await response.json();
+
+        // Find the file in the gist (could be songs.json, songs, etc.)
+        let fileContent = null;
+        const files = gistData.files;
+
+        // Try to find file with matching name (with or without extension)
+        for (const fileName in files) {
+          if (fileName.startsWith(GIST_FILE)) {
+            fileContent = files[fileName].content;
+            break;
+          }
+        }
+
+        if (!fileContent) {
+          throw new Error("Song file not found in Gist");
+        }
+
+        const data = JSON.parse(fileContent);
+
         // Handle both formats: { songs: [...] } or direct array [...]
-        const songsArray = Array.isArray(data) ? data : (data.songs || []);
-        
+        const songsArray = Array.isArray(data)
+          ? data
+          : data.songs || [];
+
         const formattedSongs = songsArray.map((song: any) => ({
           title: song.title,
           artist: song.artist,
           audioSrc: song.audioSrc,
-          albumArtUrl: song.albumArtUrl
+          albumArtUrl: song.albumArtUrl,
         }));
-        
+
         setSongs(formattedSongs);
         setIsLoading(false);
+
+        // Preload ALL images immediately for instant display
+        preloadImages(formattedSongs);
       } catch (error) {
-        console.error('Error fetching songs:', error);
+        console.error("Error fetching songs:", error);
         setIsLoading(false);
       }
     };
@@ -59,6 +100,29 @@ export const SpotifyPlayer = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Preload next and previous audio tracks for instant playback
+  useEffect(() => {
+    if (songs.length === 0) return;
+
+    const nextIndex = (currentTrackIndex + 1) % songs.length;
+    const prevIndex =
+      currentTrackIndex > 0
+        ? currentTrackIndex - 1
+        : songs.length - 1;
+
+    // Preload next track
+    if (nextAudioRef.current) {
+      nextAudioRef.current.src = songs[nextIndex].audioSrc;
+      nextAudioRef.current.load();
+    }
+
+    // Preload previous track
+    if (prevAudioRef.current) {
+      prevAudioRef.current.src = songs[prevIndex].audioSrc;
+      prevAudioRef.current.load();
+    }
+  }, [currentTrackIndex, songs]);
+
   // Setup audio event listeners
   useEffect(() => {
     const audio = audioRef.current;
@@ -70,16 +134,36 @@ export const SpotifyPlayer = () => {
 
     const handleLoadedMetadata = () => {
       setDuration(audio.duration);
-      
+
       // Auto-play jika sebelumnya sedang playing
       if (wasPlayingRef.current) {
-        audio.play().then(() => {
-          setIsPlaying(true);
-        }).catch((error) => {
-          console.error('Auto-play error:', error);
-          setIsPlaying(false);
-          wasPlayingRef.current = false;
-        });
+        audio
+          .play()
+          .then(() => {
+            setIsPlaying(true);
+          })
+          .catch((error) => {
+            console.error("Auto-play error:", error);
+            setIsPlaying(false);
+            wasPlayingRef.current = false;
+          });
+      }
+    };
+
+    const handleCanPlayThrough = () => {
+      // Audio sudah ready untuk play tanpa buffering
+      if (wasPlayingRef.current) {
+        audio
+          .play()
+          .then(() => {
+            setIsPlaying(true);
+            wasPlayingRef.current = false;
+          })
+          .catch((error) => {
+            console.error("Auto-play error:", error);
+            setIsPlaying(false);
+            wasPlayingRef.current = false;
+          });
       }
     };
 
@@ -90,25 +174,40 @@ export const SpotifyPlayer = () => {
       setCurrentTrackIndex(newIndex);
     };
 
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener(
+      "loadedmetadata",
+      handleLoadedMetadata,
+    );
+    audio.addEventListener(
+      "canplaythrough",
+      handleCanPlayThrough,
+    );
+    audio.addEventListener("ended", handleEnded);
 
-    // Preload metadata
+    // Aggressive preload - load full audio
+    audio.preload = "auto";
     audio.load();
 
     return () => {
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener(
+        "loadedmetadata",
+        handleLoadedMetadata,
+      );
+      audio.removeEventListener(
+        "canplaythrough",
+        handleCanPlayThrough,
+      );
+      audio.removeEventListener("ended", handleEnded);
     };
   }, [currentTrackIndex, songs]);
 
   const formatTime = (seconds: number) => {
-    if (isNaN(seconds)) return '0:00';
+    if (isNaN(seconds)) return "0:00";
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const handlePlayPause = () => {
@@ -119,15 +218,20 @@ export const SpotifyPlayer = () => {
       audio.pause();
       setIsPlaying(false);
     } else {
-      audio.play().then(() => {
-        setIsPlaying(true);
-      }).catch((error) => {
-        console.error('Play error:', error);
-      });
+      audio
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch((error) => {
+          console.error("Play error:", error);
+        });
     }
   };
 
-  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleProgressClick = (
+    e: React.MouseEvent<HTMLDivElement>,
+  ) => {
     const audio = audioRef.current;
     if (!audio) return;
 
@@ -142,8 +246,11 @@ export const SpotifyPlayer = () => {
   const handlePrev = () => {
     // Simpan kondisi playing sebelumnya
     wasPlayingRef.current = isPlaying;
-    
-    const newIndex = currentTrackIndex > 0 ? currentTrackIndex - 1 : songs.length - 1;
+
+    const newIndex =
+      currentTrackIndex > 0
+        ? currentTrackIndex - 1
+        : songs.length - 1;
     setCurrentTrackIndex(newIndex);
     setCurrentTime(0);
   };
@@ -151,7 +258,7 @@ export const SpotifyPlayer = () => {
   const handleNext = () => {
     // Simpan kondisi playing sebelumnya
     wasPlayingRef.current = isPlaying;
-    
+
     const newIndex = (currentTrackIndex + 1) % songs.length;
     setCurrentTrackIndex(newIndex);
     setCurrentTime(0);
@@ -159,10 +266,10 @@ export const SpotifyPlayer = () => {
 
   if (isLoading || songs.length === 0) {
     return (
-      <div 
+      <div
         className="spotify-card spotify-theme"
-        style={{ 
-          display: isVisible ? 'block' : 'none'
+        style={{
+          display: isVisible ? "block" : "none",
         }}
       >
         <div className="spotify-header">
@@ -174,23 +281,38 @@ export const SpotifyPlayer = () => {
   }
 
   const currentTrack = songs[currentTrackIndex];
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const progress =
+    duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
     <>
-      {/* Hidden audio element */}
-      <audio 
+      {/* Hidden audio elements - current, next, and previous for instant loading */}
+      <audio
         id="audio-player"
-        ref={audioRef} 
+        ref={audioRef}
         src={currentTrack.audioSrc}
-        preload="metadata"
+        preload="auto"
       />
-      
+
+      {/* Preload next track */}
+      <audio
+        ref={nextAudioRef}
+        preload="auto"
+        style={{ display: "none" }}
+      />
+
+      {/* Preload previous track */}
+      <audio
+        ref={prevAudioRef}
+        preload="auto"
+        style={{ display: "none" }}
+      />
+
       {/* Spotify Card */}
-      <div 
+      <div
         className="spotify-card spotify-theme"
-        style={{ 
-          display: isVisible ? 'block' : 'none'
+        style={{
+          display: isVisible ? "block" : "none",
         }}
       >
         {/* Header */}
@@ -205,50 +327,62 @@ export const SpotifyPlayer = () => {
             id="spotify-album-art"
             src={currentTrack.albumArtUrl}
             alt={`${currentTrack.title} album art`}
+            loading="eager"
+            decoding="async"
           />
           <div className="spotify-info">
-            <strong id="spotify-song-title">{currentTrack.title}</strong>
-            <span id="spotify-artist-name">{currentTrack.artist}</span>
+            <strong id="spotify-song-title">
+              {currentTrack.title}
+            </strong>
+            <span id="spotify-artist-name">
+              {currentTrack.artist}
+            </span>
           </div>
         </div>
 
         {/* Progress Bar */}
         <div className="spotify-progress">
-          <div 
-            id="progress-bar-track" 
+          <div
+            id="progress-bar-track"
             onClick={handleProgressClick}
           >
-            <div 
-              id="progress-bar" 
+            <div
+              id="progress-bar"
               style={{ width: `${progress}%` }}
             />
           </div>
           <div className="spotify-time">
-            <span id="current-time">{formatTime(currentTime)}</span>
-            <span id="total-duration">{formatTime(duration)}</span>
+            <span id="current-time">
+              {formatTime(currentTime)}
+            </span>
+            <span id="total-duration">
+              {formatTime(duration)}
+            </span>
           </div>
         </div>
 
         {/* Controls */}
         <div className="spotify-controls">
-          <button 
-            id="prev-btn" 
+          <button
+            id="prev-btn"
             className="spotify-control"
             onClick={handlePrev}
           >
             <i className="fa-solid fa-backward-step"></i>
           </button>
 
-          <button 
-            id="play-pause-btn" 
+          <button
+            id="play-pause-btn"
             className="spotify-control main"
             onClick={handlePlayPause}
           >
-            <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'}`}></i>
+            <i
+              className={`fa-solid ${isPlaying ? "fa-pause" : "fa-play"}`}
+            ></i>
           </button>
 
-          <button 
-            id="next-btn" 
+          <button
+            id="next-btn"
             className="spotify-control"
             onClick={handleNext}
           >
