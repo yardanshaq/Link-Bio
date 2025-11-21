@@ -224,188 +224,185 @@ export default function App() {
         </div>
       </div>
 
-      {/* Main Content Wrapper */}
-      <div style={{ width: '100%', maxWidth: '600px', margin: '20px auto', padding: '0 10px' }}>
-        <div className="container">
-          <div className="decorative-box box-1"></div>
-          <div className="decorative-box box-2"></div>
+      <div className="container">
+        <div className="decorative-box box-1"></div>
+        <div className="decorative-box box-2"></div>
 
-          {/* Marquee */}
-          <div className="marquee-container">
-            <div className="marquee-text">
-              {t.marquee} • {t.marquee} •
-            </div>
+        {/* Marquee */}
+        <div className="marquee-container">
+          <div className="marquee-text">
+            {t.marquee} • {t.marquee} •
           </div>
-
-          {/* Header/Profile */}
-          <div className="header">
-            <a
-              href={profileConfig.profileUrl}
-              className="profile-link"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img
-                src={profileConfig.profileImage}
-                alt={profileConfig.fullName}
-                className="profile-img"
-              />
-            </a>
-            <div className="logo">{profileConfig.name}</div>
-            <div className="tagline">{t.greeting}</div>
-
-            {/* Social Icons */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                gap: "10px",
-                marginTop: "20px",
-              }}
-            >
-              {socialMediaConfig.map((social, index) => (
-                <a
-                  key={index}
-                  href={social.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "50px",
-                    height: "50px",
-                    background: social.bgColor,
-                    border: "4px solid #000",
-                    boxShadow: `4px 4px 0 ${social.shadowColor}`,
-                    fontSize: "24px",
-                    transition: "all 0.2s ease",
-                    textDecoration: "none",
-                    color: social.textColor,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform =
-                      "translate(2px, 2px)";
-                    e.currentTarget.style.boxShadow =
-                      `2px 2px 0 ${social.shadowColor}`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform =
-                      "translate(0, 0)";
-                    e.currentTarget.style.boxShadow =
-                      `4px 4px 0 ${social.shadowColor}`;
-                  }}
-                >
-                  <i className={social.icon}></i>
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* About Section */}
-          <div className="section-title animate-on-scroll">
-            <i className="fas fa-user"></i> {t.about}
-          </div>
-          {aboutLinks.map((link, index) => (
-            <a
-              key={index}
-              href={link.href}
-              className={`link-item ${link.color} animate-on-scroll`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ animationDelay: `${0.1 + index * 0.1}s` }}
-            >
-              <div className="icon"><i className={link.icon}></i></div>
-              <div className="link-content">
-                <span className="link-title">{link.title}</span>
-                <span className="link-url">{link.url}</span>
-              </div>
-              <div
-                className="copy-btn"
-                onClick={(e) => copyToClipboard(link.href, e)}
-                role="button"
-                tabIndex={0}
-              >
-                <i className="fa-regular fa-copy"></i>
-              </div>
-            </a>
-          ))}
-
-          {/* Projects Section */}
-          <div
-            className="section-title animate-on-scroll"
-            style={{ animationDelay: "0.4s" }}
-          >
-            <i className="fas fa-code"></i> {t.projects}
-          </div>
-          {projectLinks.map((link, index) => (
-            <a
-              key={index}
-              href={link.href}
-              className={`link-item ${link.color} animate-on-scroll`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ animationDelay: `${0.5 + index * 0.1}s` }}
-            >
-              <div className="icon"><i className={link.icon}></i></div>
-              <div className="link-content">
-                <span className="link-title">{link.title}</span>
-                <span className="link-url">{link.url}</span>
-              </div>
-              <div
-                className="copy-btn"
-                onClick={(e) => copyToClipboard(link.href, e)}
-                role="button"
-                tabIndex={0}
-              >
-                <i className="fa-regular fa-copy"></i>
-              </div>
-            </a>
-          ))}
-
-          {/* Contact Section */}
-          <div
-            className="section-title animate-on-scroll"
-            style={{ animationDelay: "1.2s" }}
-          >
-            <i className="fas fa-envelope"></i> {t.contact}
-          </div>
-          {contactLinks.map((link, index) => (
-            <a
-              key={index}
-              href={link.href}
-              className={`link-item ${link.color} animate-on-scroll`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ animationDelay: `${1.3 + index * 0.1}s` }}
-            >
-              <div className="icon"><i className={link.icon}></i></div>
-              <div className="link-content">
-                <span className="link-title">{link.title}</span>
-                <span className="link-url">{link.url}</span>
-              </div>
-              <div
-                className="copy-btn"
-                onClick={(e) => copyToClipboard(link.href, e)}
-                role="button"
-                tabIndex={0}
-              >
-                <i className="fa-regular fa-copy"></i>
-              </div>
-            </a>
-          ))}
-
-          {/* Spotify Section */}
-          <h3 className="section-title animate-on-scroll" style={{ animationDelay: '1.6s' }}>
-            {t.musicSection}
-          </h3>
-          <div className="animate-on-scroll" style={{ animationDelay: '1.7s' }}>
-            <SpotifyPlayer />
-          </div>
-
-          {/* Footer */}
-          <div className="footer">{t.footer}</div>
         </div>
+
+        {/* Header/Profile */}
+        <div className="header">
+          <a
+            href={profileConfig.profileUrl}
+            className="profile-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              src={profileConfig.profileImage}
+              alt={profileConfig.fullName}
+              className="profile-img"
+            />
+          </a>
+          <div className="logo">{profileConfig.name}</div>
+          <div className="tagline">{t.greeting}</div>
+
+          {/* Social Icons */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: "10px",
+              marginTop: "20px",
+            }}
+          >
+            {socialMediaConfig.map((social, index) => (
+              <a
+                key={index}
+                href={social.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "50px",
+                  height: "50px",
+                  background: social.bgColor,
+                  border: "4px solid #000",
+                  boxShadow: `4px 4px 0 ${social.shadowColor}`,
+                  fontSize: "24px",
+                  transition: "all 0.2s ease",
+                  textDecoration: "none",
+                  color: social.textColor,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform =
+                    "translate(2px, 2px)";
+                  e.currentTarget.style.boxShadow =
+                    `2px 2px 0 ${social.shadowColor}`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform =
+                    "translate(0, 0)";
+                  e.currentTarget.style.boxShadow =
+                    `4px 4px 0 ${social.shadowColor}`;
+                }}
+              >
+                <i className={social.icon}></i>
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* About Section */}
+        <div className="section-title animate-on-scroll">
+          <i className="fas fa-user"></i> {t.about}
+        </div>
+        {aboutLinks.map((link, index) => (
+          <a
+            key={index}
+            href={link.href}
+            className={`link-item ${link.color} animate-on-scroll`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ animationDelay: `${0.1 + index * 0.1}s` }}
+          >
+            <div className="icon"><i className={link.icon}></i></div>
+            <div className="link-content">
+              <span className="link-title">{link.title}</span>
+              <span className="link-url">{link.url}</span>
+            </div>
+            <div
+              className="copy-btn"
+              onClick={(e) => copyToClipboard(link.href, e)}
+              role="button"
+              tabIndex={0}
+            >
+              <i className="fa-regular fa-copy"></i>
+            </div>
+          </a>
+        ))}
+
+        {/* Projects Section */}
+        <div
+          className="section-title animate-on-scroll"
+          style={{ animationDelay: "0.4s" }}
+        >
+          <i className="fas fa-code"></i> {t.projects}
+        </div>
+        {projectLinks.map((link, index) => (
+          <a
+            key={index}
+            href={link.href}
+            className={`link-item ${link.color} animate-on-scroll`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ animationDelay: `${0.5 + index * 0.1}s` }}
+          >
+            <div className="icon"><i className={link.icon}></i></div>
+            <div className="link-content">
+              <span className="link-title">{link.title}</span>
+              <span className="link-url">{link.url}</span>
+            </div>
+            <div
+              className="copy-btn"
+              onClick={(e) => copyToClipboard(link.href, e)}
+              role="button"
+              tabIndex={0}
+            >
+              <i className="fa-regular fa-copy"></i>
+            </div>
+          </a>
+        ))}
+
+        {/* Contact Section */}
+        <div
+          className="section-title animate-on-scroll"
+          style={{ animationDelay: "1.2s" }}
+        >
+          <i className="fas fa-envelope"></i> {t.contact}
+        </div>
+        {contactLinks.map((link, index) => (
+          <a
+            key={index}
+            href={link.href}
+            className={`link-item ${link.color} animate-on-scroll`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ animationDelay: `${1.3 + index * 0.1}s` }}
+          >
+            <div className="icon"><i className={link.icon}></i></div>
+            <div className="link-content">
+              <span className="link-title">{link.title}</span>
+              <span className="link-url">{link.url}</span>
+            </div>
+            <div
+              className="copy-btn"
+              onClick={(e) => copyToClipboard(link.href, e)}
+              role="button"
+              tabIndex={0}
+            >
+              <i className="fa-regular fa-copy"></i>
+            </div>
+          </a>
+        ))}
+
+        {/* Spotify Section */}
+        <h3 className="section-title animate-on-scroll" style={{ animationDelay: '1.6s' }}>
+          {t.musicSection}
+        </h3>
+        <div className="animate-on-scroll" style={{ animationDelay: '1.7s' }}>
+          <SpotifyPlayer />
+        </div>
+
+        {/* Footer */}
+        <div className="footer">{t.footer}</div>
       </div>
 
       {/* QR Button */}
