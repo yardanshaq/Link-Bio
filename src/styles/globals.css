@@ -1086,6 +1086,13 @@ body.light-mode {
     .tagline {
         font-size: 12px;
     }
+    
+    /* Social icons responsive */
+    .header > div[style*="display: flex"] a {
+        width: 45px !important;
+        height: 45px !important;
+        font-size: 20px !important;
+    }
 
     .link-item {
         padding: 15px 18px;
@@ -1255,6 +1262,19 @@ body.light-mode {
     .profile-link:hover .profile-img {
         box-shadow: 4px 4px 0 #fbbf24;
     }
+    
+    /* Social icons untuk mobile kecil */
+    .header > div[style*="display: flex"] {
+        gap: 8px !important;
+    }
+    
+    .header > div[style*="display: flex"] a {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 18px !important;
+        border: 3px solid #000 !important;
+        box-shadow: 3px 3px 0 #000 !important;
+    }
 
     .link-item {
         padding: 12px 15px;
@@ -1273,6 +1293,54 @@ body.light-mode {
 
     .link-url {
         font-size: 11px;
+    }
+    
+    /* FAB buttons stack untuk mobile */
+    .back-to-top,
+    .share-btn,
+    .qr-btn {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 20px !important;
+    }
+    
+    .back-to-top {
+        right: 15px !important;
+        bottom: 15px !important;
+    }
+    
+    .share-btn {
+        right: 75px !important;
+        bottom: 15px !important;
+    }
+     
+    .qr-btn {
+        right: 135px !important;
+        bottom: 15px !important;
+    }
+    
+    /* Lang & Theme toggle untuk mobile kecil */
+    .lang-toggle {
+        top: 15px !important;
+        right: 80px !important;
+        width: 55px !important;
+        height: 30px !important;
+    }
+    
+    .theme-toggle {
+        top: 15px !important;
+        right: 15px !important;
+        width: 55px !important;
+        height: 30px !important;
+    }
+    
+    .theme-toggle-circle {
+        width: 20px !important;
+        height: 20px !important;
+    }
+    
+    .theme-toggle.active .theme-toggle-circle {
+        left: 29px !important;
     }
 }
 
