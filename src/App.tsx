@@ -27,6 +27,15 @@ export default function App() {
       setIsLoading(false);
     }, 2000);
 
+    // Add viewport meta tag for mobile responsiveness
+    let viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (!viewportMeta) {
+      viewportMeta = document.createElement('meta');
+      viewportMeta.name = 'viewport';
+      viewportMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+      document.head.appendChild(viewportMeta);
+    }
+
     // Add Google Fonts - Ubuntu Mono
     const fontLink = document.createElement("link");
     fontLink.rel = "stylesheet";
@@ -50,6 +59,7 @@ export default function App() {
       elements.forEach((element) => {
         const rect = element.getBoundingClientRect();
         const windowHeight = window.innerHeight;
+        // Ubah dari 0.85 ke 1.5 agar konten muncul lebih awal (bahkan sebelum masuk viewport)
         if (rect.top < windowHeight * 1.05) {
           element.classList.add("is-visible");
         }

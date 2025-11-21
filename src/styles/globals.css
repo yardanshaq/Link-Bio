@@ -186,6 +186,7 @@
 
 html {
   font-size: var(--font-size);
+  overflow-x: hidden;
 }
 
 /* Neobrutalism Link Bio Styles */
@@ -202,8 +203,9 @@ body {
     padding: 20px;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     transition: background 0.5s ease;
+    overflow-x: hidden;
 }
 
 body.light-mode {
