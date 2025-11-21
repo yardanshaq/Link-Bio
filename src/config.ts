@@ -13,8 +13,8 @@ export const profileConfig = {
 // ==================== MUSIC PLAYER ====================
 export const musicConfig = {
   gistUser: "yardanshaq",
-  gistId: "bdd3cdcef667ca691f4d5c86f5aff162",
-  gistFile: "songs",
+  gistId: "daf658c28c6efa59d22565988431c866",
+  gistFile: "playlist",
   sectionTitle: {
     id: "Albumku",
     en: "My Album",
