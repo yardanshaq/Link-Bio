@@ -187,6 +187,7 @@
 html {
   font-size: var(--font-size);
   overflow-x: hidden;
+  width: 100%;
 }
 
 /* Neobrutalism Link Bio Styles */
@@ -200,11 +201,12 @@ body {
     font-family: 'Ubuntu Mono', monospace;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     min-height: 100vh;
-    padding: 0;
+    padding: 20px 10px;
     margin: 0;
     display: block;
     transition: background 0.5s ease;
     overflow-x: hidden;
+    width: 100%;
 }
 
 body.light-mode {
