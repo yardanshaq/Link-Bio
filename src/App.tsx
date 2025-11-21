@@ -50,7 +50,7 @@ export default function App() {
       elements.forEach((element) => {
         const rect = element.getBoundingClientRect();
         const windowHeight = window.innerHeight;
-        if (rect.top < windowHeight * 0.85) {
+        if (rect.top < windowHeight * 1.0) {
           element.classList.add("is-visible");
         }
       });
