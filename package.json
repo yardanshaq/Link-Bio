@@ -1,6 +1,6 @@
 
   {
-      "name": "Create Bio Link Website",
+      "name": "link-bio",
       "version": "0.1.0",
       "private": true,
       "dependencies": {
