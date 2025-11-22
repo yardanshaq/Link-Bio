@@ -35,12 +35,12 @@ export default function App() {
       viewportMeta = document.createElement("meta");
       viewportMeta.name = "viewport";
       viewportMeta.content =
-        "width=device-width, initial-scale=0.65, maximum-scale=5.0, user-scalable=yes";
+        "width=device-width, initial-scale=0.7, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover";
       document.head.appendChild(viewportMeta);
     } else {
       // Update existing viewport meta
       (viewportMeta as HTMLMetaElement).content =
-        "width=device-width, initial-scale=0.65, maximum-scale=5.0, user-scalable=yes";
+        "width=device-width, initial-scale=0.7, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover";
     }
 
     // Add Google Fonts - Ubuntu Mono
@@ -423,7 +423,7 @@ export default function App() {
             className="section-title animate-on-scroll"
             style={{ animationDelay: "1.6s" }}
           >
-            {t.musicSection}
+            <i className="fas fa-compact-disc"></i> {t.musicSection}
           </h3>
           <div
             className="animate-on-scroll"

@@ -16,8 +16,8 @@ export const musicConfig = {
   gistId: "daf658c28c6efa59d22565988431c866",
   gistFile: "playlist",
   sectionTitle: {
-    id: "Albumku",
-    en: "My Album",
+    id: "Playlist-ku",
+    en: "My Playlist",
   },
 };
 
@@ -35,9 +35,9 @@ export const socialMediaConfig = [
     name: "X / Twitter",
     url: "https://x.com/yardanshaq",
     icon: "fa-brands fa-x-twitter",
-    bgColor: "#000",
-    textColor: "#fff",
-    shadowColor: "#fbbf24",
+    bgColor: "#fff",
+    textColor: "#000",
+    shadowColor: "#000",
   },
   {
     name: "Instagram",
