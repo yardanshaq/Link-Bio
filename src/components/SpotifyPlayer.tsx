@@ -38,7 +38,7 @@ export const SpotifyPlayer = () => {
     const fetchSongs = async () => {
       try {
         // Fetch langsung ke file di folder public (sangat cepat, <10ms)
-        const response = await fetch('/songs.json');
+        const response = await fetch('../songs.json');
         
         if (!response.ok) {
           throw new Error(`Gagal memuat lagu: ${response.status}`);
