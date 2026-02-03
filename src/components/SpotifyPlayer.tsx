@@ -1,6 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-// Import data lagu secara lokal untuk loading instan
-import songData from '../songs.json'; 
 
 interface Song {
   title: string;
@@ -23,8 +21,8 @@ export const SpotifyPlayer = () => {
   const [duration, setDuration] = useState(0);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
-  const [songs] = useState<Song[]>(songData); // Menggunakan data lokal langsung
-  const [isLoading, setIsLoading] = useState(false); // Langsung false karena data lokal
+  const [songs, setSongs] = useState<Song[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isBuffering, setIsBuffering] = useState(false);
 
   // --- HELPER: Preload Images ---
@@ -35,22 +33,51 @@ export const SpotifyPlayer = () => {
     });
   };
 
-  // --- EFFECT: Initial Load ---
+  // --- FETCH SONGS (Metode Cepat via Public Folder) ---
   useEffect(() => {
-    // Karena menggunakan file lokal, kita tidak perlu fetch lagi
-    if (songs.length > 0) {
-      preloadImages(songs);
-    }
+    const fetchSongs = async () => {
+      try {
+        // Fetch langsung ke file di folder public (sangat cepat, <10ms)
+        const response = await fetch('/songs.json');
+        
+        if (!response.ok) {
+          throw new Error(`Gagal memuat lagu: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Handle format array langsung atau object { songs: [] }
+        const songsArray = Array.isArray(data) ? data : (data.songs || []);
+        
+        const formattedSongs = songsArray.map((song: any) => ({
+          title: song.title,
+          artist: song.artist,
+          audioSrc: song.audioSrc,
+          albumArtUrl: song.albumArtUrl
+        }));
+        
+        setSongs(formattedSongs);
+        setIsLoading(false);
+        
+        // Preload gambar segera
+        preloadImages(formattedSongs);
+      } catch (error) {
+        console.error('Error loading songs:', error);
+        setIsLoading(false);
+      }
+    };
 
-    // Delay sedikit agar transisi masuk lebih smooth
+    fetchSongs();
+
+    // Munculkan player dengan animasi halus
     const timer = setTimeout(() => {
       setIsVisible(true);
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [songs]);
+  }, []);
 
-  // --- EFFECT: Preload Next & Prev Audio ---
+  // --- PRELOAD NEXT/PREV AUDIO ---
   useEffect(() => {
     if (songs.length === 0) return;
 
@@ -68,7 +95,7 @@ export const SpotifyPlayer = () => {
     }
   }, [currentTrackIndex, songs]);
 
-  // --- EFFECT: Audio Event Listeners ---
+  // --- AUDIO EVENT LISTENERS ---
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || songs.length === 0) return;
@@ -82,6 +109,7 @@ export const SpotifyPlayer = () => {
       isReadyToPlayRef.current = true;
       setIsBuffering(false);
       
+      // Auto-resume jika sebelumnya playing
       if (wasPlayingRef.current) {
         audio.play().then(() => {
           setIsPlaying(true);
@@ -101,8 +129,7 @@ export const SpotifyPlayer = () => {
 
     const handleEnded = () => {
       wasPlayingRef.current = true;
-      const newIndex = (currentTrackIndex + 1) % songs.length;
-      setCurrentTrackIndex(newIndex);
+      handleNext();
     };
 
     const handleWaiting = () => setIsBuffering(true);
@@ -110,15 +137,12 @@ export const SpotifyPlayer = () => {
       setIsBuffering(false);
       isReadyToPlayRef.current = true;
     };
-
     const handleLoadStart = () => {
       setIsBuffering(true);
       isReadyToPlayRef.current = false;
     };
-
     const handleLoadedData = () => setIsBuffering(false);
 
-    // Attach listeners
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('canplay', handleCanPlay);
@@ -133,7 +157,6 @@ export const SpotifyPlayer = () => {
     audio.load();
 
     return () => {
-      // Cleanup listeners
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('canplay', handleCanPlay);
@@ -163,11 +186,7 @@ export const SpotifyPlayer = () => {
       setIsPlaying(false);
     } else {
       if (isReadyToPlayRef.current || audio.readyState >= 3) {
-        audio.play().then(() => {
-          setIsPlaying(true);
-        }).catch((error) => {
-          console.error('Play error:', error);
-        });
+        audio.play().then(() => setIsPlaying(true)).catch(console.error);
       } else {
         setIsBuffering(true);
         const tryPlay = () => {
@@ -175,8 +194,7 @@ export const SpotifyPlayer = () => {
             audio.play().then(() => {
               setIsPlaying(true);
               setIsBuffering(false);
-            }).catch((error) => {
-              console.error('Play error:', error);
+            }).catch(() => {
               setIsBuffering(false);
             });
           } else {
@@ -214,13 +232,15 @@ export const SpotifyPlayer = () => {
     setCurrentTime(0);
   };
 
-  // --- RENDER ---
   if (isLoading || songs.length === 0) {
     return (
-      <div className="spotify-card spotify-theme" style={{ display: isVisible ? 'block' : 'none' }}>
+      <div 
+        className="spotify-card spotify-theme"
+        style={{ display: isVisible ? 'block' : 'none' }}
+      >
         <div className="spotify-header">
           <i className="fa-brands fa-spotify"></i>
-          <span>Loading collection...</span>
+          <span>Loading songs...</span>
         </div>
       </div>
     );
@@ -235,7 +255,10 @@ export const SpotifyPlayer = () => {
       <audio ref={nextAudioRef} preload="auto" style={{ display: 'none' }} />
       <audio ref={prevAudioRef} preload="auto" style={{ display: 'none' }} />
       
-      <div className="spotify-card spotify-theme" style={{ display: isVisible ? 'block' : 'none' }}>
+      <div 
+        className="spotify-card spotify-theme"
+        style={{ display: isVisible ? 'block' : 'none' }}
+      >
         <div className="spotify-header">
           <i className="fa-brands fa-spotify"></i>
           <span>Listening on Spotify</span>
@@ -248,7 +271,10 @@ export const SpotifyPlayer = () => {
             alt={`${currentTrack.title} album art`}
             loading="eager"
             decoding="async"
-            style={{ opacity: isBuffering ? 0.7 : 1 }}
+            style={{ 
+              opacity: isBuffering ? 0.7 : 1,
+              transition: 'opacity 0.2s ease' 
+            }}
           />
           <div className="spotify-info">
             <strong id="spotify-song-title">{currentTrack.title}</strong>
@@ -273,9 +299,9 @@ export const SpotifyPlayer = () => {
 
           <button id="play-pause-btn" className="spotify-control main" onClick={handlePlayPause}>
             {isBuffering ? (
-              <i className="fa-solid fa-circle-notch fa-spin"></i>
+               <i className="fa-solid fa-circle-notch fa-spin"></i>
             ) : (
-              <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'}`}></i>
+               <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'}`}></i>
             )}
           </button>
 
