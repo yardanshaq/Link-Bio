@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { musicConfig } from '../config';
+// Import data lagu secara lokal untuk loading instan
+import songData from '../songs.json'; 
 
 interface Song {
   title: string;
@@ -9,137 +10,78 @@ interface Song {
 }
 
 export const SpotifyPlayer = () => {
+  // --- REFS ---
   const audioRef = useRef<HTMLAudioElement>(null);
   const nextAudioRef = useRef<HTMLAudioElement>(null);
   const prevAudioRef = useRef<HTMLAudioElement>(null);
+  const wasPlayingRef = useRef(false);
+  const isReadyToPlayRef = useRef(false);
+
+  // --- STATE ---
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
-  const [songs, setSongs] = useState<Song[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [songs] = useState<Song[]>(songData); // Menggunakan data lokal langsung
+  const [isLoading, setIsLoading] = useState(false); // Langsung false karena data lokal
   const [isBuffering, setIsBuffering] = useState(false);
-  const wasPlayingRef = useRef(false);
-  const isReadyToPlayRef = useRef(false);
 
-  const GIST_USER = musicConfig.gistUser;
-  const GIST_ID = musicConfig.gistId;
-  const GIST_FILE = musicConfig.gistFile;
-
-  // Preload images for instant display
-  const preloadImages = (songs: Song[]) => {
-    songs.forEach((song) => {
+  // --- HELPER: Preload Images ---
+  const preloadImages = (songsToLoad: Song[]) => {
+    songsToLoad.forEach((song) => {
       const img = new Image();
       img.src = song.albumArtUrl;
     });
   };
 
-  // Fetch songs from Gist with fast loading
+  // --- EFFECT: Initial Load ---
   useEffect(() => {
-    const fetchSongs = async () => {
-      try {
-        // Use GitHub Gist API to get the raw content
-        const apiUrl = `https://api.github.com/gists/${GIST_ID}`;
-        const response = await fetch(apiUrl);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const gistData = await response.json();
-        
-        // Find the file in the gist (could be songs.json, songs, etc.)
-        let fileContent = null;
-        const files = gistData.files;
-        
-        // Try to find file with matching name (with or without extension)
-        for (const fileName in files) {
-          if (fileName.startsWith(GIST_FILE)) {
-            fileContent = files[fileName].content;
-            break;
-          }
-        }
-        
-        if (!fileContent) {
-          throw new Error('Song file not found in Gist');
-        }
-        
-        const data = JSON.parse(fileContent);
-        
-        // Handle both formats: { songs: [...] } or direct array [...]
-        const songsArray = Array.isArray(data) ? data : (data.songs || []);
-        
-        const formattedSongs = songsArray.map((song: any) => ({
-          title: song.title,
-          artist: song.artist,
-          audioSrc: song.audioSrc,
-          albumArtUrl: song.albumArtUrl
-        }));
-        
-        setSongs(formattedSongs);
-        setIsLoading(false);
-        
-        // Preload ALL images immediately for instant display
-        preloadImages(formattedSongs);
-      } catch (error) {
-        console.error('Error fetching songs:', error);
-        setIsLoading(false);
-      }
-    };
+    // Karena menggunakan file lokal, kita tidak perlu fetch lagi
+    if (songs.length > 0) {
+      preloadImages(songs);
+    }
 
-    fetchSongs();
-
-    // Show player after loading
+    // Delay sedikit agar transisi masuk lebih smooth
     const timer = setTimeout(() => {
       setIsVisible(true);
     }, 500);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [songs]);
 
-  // Preload next and previous audio tracks for instant playback
+  // --- EFFECT: Preload Next & Prev Audio ---
   useEffect(() => {
     if (songs.length === 0) return;
 
     const nextIndex = (currentTrackIndex + 1) % songs.length;
     const prevIndex = currentTrackIndex > 0 ? currentTrackIndex - 1 : songs.length - 1;
 
-    // Preload next track
     if (nextAudioRef.current) {
       nextAudioRef.current.src = songs[nextIndex].audioSrc;
       nextAudioRef.current.load();
     }
 
-    // Preload previous track
     if (prevAudioRef.current) {
       prevAudioRef.current.src = songs[prevIndex].audioSrc;
       prevAudioRef.current.load();
     }
   }, [currentTrackIndex, songs]);
 
-  // Setup audio event listeners
+  // --- EFFECT: Audio Event Listeners ---
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || songs.length === 0) return;
 
-    // Reset ready state
     isReadyToPlayRef.current = false;
 
-    const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime);
-    };
-
-    const handleLoadedMetadata = () => {
-      setDuration(audio.duration);
-    };
+    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleLoadedMetadata = () => setDuration(audio.duration);
 
     const handleCanPlay = () => {
-      // Audio has enough data to start playing
       isReadyToPlayRef.current = true;
       setIsBuffering(false);
       
-      // Auto-play jika sebelumnya sedang playing
       if (wasPlayingRef.current) {
         audio.play().then(() => {
           setIsPlaying(true);
@@ -153,22 +95,17 @@ export const SpotifyPlayer = () => {
     };
 
     const handleCanPlayThrough = () => {
-      // Audio can play through without stopping for buffering
       isReadyToPlayRef.current = true;
       setIsBuffering(false);
     };
 
     const handleEnded = () => {
-      // Auto play next track saat lagu selesai
       wasPlayingRef.current = true;
       const newIndex = (currentTrackIndex + 1) % songs.length;
       setCurrentTrackIndex(newIndex);
     };
 
-    const handleWaiting = () => {
-      setIsBuffering(true);
-    };
-
+    const handleWaiting = () => setIsBuffering(true);
     const handlePlaying = () => {
       setIsBuffering(false);
       isReadyToPlayRef.current = true;
@@ -179,11 +116,9 @@ export const SpotifyPlayer = () => {
       isReadyToPlayRef.current = false;
     };
 
-    const handleLoadedData = () => {
-      // Some data has been loaded
-      setIsBuffering(false);
-    };
+    const handleLoadedData = () => setIsBuffering(false);
 
+    // Attach listeners
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('canplay', handleCanPlay);
@@ -194,11 +129,11 @@ export const SpotifyPlayer = () => {
     audio.addEventListener('loadstart', handleLoadStart);
     audio.addEventListener('loadeddata', handleLoadedData);
 
-    // Aggressive preload - load full audio
     audio.preload = 'auto';
     audio.load();
 
     return () => {
+      // Cleanup listeners
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('canplay', handleCanPlay);
@@ -211,6 +146,7 @@ export const SpotifyPlayer = () => {
     };
   }, [currentTrackIndex, songs]);
 
+  // --- HANDLERS ---
   const formatTime = (seconds: number) => {
     if (isNaN(seconds)) return '0:00';
     const mins = Math.floor(seconds / 60);
@@ -226,7 +162,6 @@ export const SpotifyPlayer = () => {
       audio.pause();
       setIsPlaying(false);
     } else {
-      // Check if audio is ready before playing
       if (isReadyToPlayRef.current || audio.readyState >= 3) {
         audio.play().then(() => {
           setIsPlaying(true);
@@ -234,7 +169,6 @@ export const SpotifyPlayer = () => {
           console.error('Play error:', error);
         });
       } else {
-        // Wait for audio to be ready
         setIsBuffering(true);
         const tryPlay = () => {
           if (audio.readyState >= 3) {
@@ -267,34 +201,26 @@ export const SpotifyPlayer = () => {
   };
 
   const handlePrev = () => {
-    // Simpan kondisi playing sebelumnya
     wasPlayingRef.current = isPlaying;
-    
     const newIndex = currentTrackIndex > 0 ? currentTrackIndex - 1 : songs.length - 1;
     setCurrentTrackIndex(newIndex);
     setCurrentTime(0);
   };
 
   const handleNext = () => {
-    // Simpan kondisi playing sebelumnya
     wasPlayingRef.current = isPlaying;
-    
     const newIndex = (currentTrackIndex + 1) % songs.length;
     setCurrentTrackIndex(newIndex);
     setCurrentTime(0);
   };
 
+  // --- RENDER ---
   if (isLoading || songs.length === 0) {
     return (
-      <div 
-        className="spotify-card spotify-theme"
-        style={{ 
-          display: isVisible ? 'block' : 'none'
-        }}
-      >
+      <div className="spotify-card spotify-theme" style={{ display: isVisible ? 'block' : 'none' }}>
         <div className="spotify-header">
           <i className="fa-brands fa-spotify"></i>
-          <span>Loading songs...</span>
+          <span>Loading collection...</span>
         </div>
       </div>
     );
@@ -305,42 +231,16 @@ export const SpotifyPlayer = () => {
 
   return (
     <>
-      {/* Hidden audio elements - current, next, and previous for instant loading */}
-      <audio 
-        id="audio-player"
-        ref={audioRef} 
-        src={currentTrack.audioSrc}
-        preload="auto"
-      />
+      <audio id="audio-player" ref={audioRef} src={currentTrack.audioSrc} preload="auto" />
+      <audio ref={nextAudioRef} preload="auto" style={{ display: 'none' }} />
+      <audio ref={prevAudioRef} preload="auto" style={{ display: 'none' }} />
       
-      {/* Preload next track */}
-      <audio 
-        ref={nextAudioRef}
-        preload="auto"
-        style={{ display: 'none' }}
-      />
-      
-      {/* Preload previous track */}
-      <audio 
-        ref={prevAudioRef}
-        preload="auto"
-        style={{ display: 'none' }}
-      />
-      
-      {/* Spotify Card */}
-      <div 
-        className="spotify-card spotify-theme"
-        style={{ 
-          display: isVisible ? 'block' : 'none'
-        }}
-      >
-        {/* Header */}
+      <div className="spotify-card spotify-theme" style={{ display: isVisible ? 'block' : 'none' }}>
         <div className="spotify-header">
           <i className="fa-brands fa-spotify"></i>
           <span>Listening on Spotify</span>
         </div>
 
-        {/* Track Info */}
         <div className="spotify-content">
           <img
             id="spotify-album-art"
@@ -348,6 +248,7 @@ export const SpotifyPlayer = () => {
             alt={`${currentTrack.title} album art`}
             loading="eager"
             decoding="async"
+            style={{ opacity: isBuffering ? 0.7 : 1 }}
           />
           <div className="spotify-info">
             <strong id="spotify-song-title">{currentTrack.title}</strong>
@@ -355,16 +256,9 @@ export const SpotifyPlayer = () => {
           </div>
         </div>
 
-        {/* Progress Bar */}
         <div className="spotify-progress">
-          <div 
-            id="progress-bar-track" 
-            onClick={handleProgressClick}
-          >
-            <div 
-              id="progress-bar" 
-              style={{ width: `${progress}%` }}
-            />
+          <div id="progress-bar-track" onClick={handleProgressClick}>
+            <div id="progress-bar" style={{ width: `${progress}%` }} />
           </div>
           <div className="spotify-time">
             <span id="current-time">{formatTime(currentTime)}</span>
@@ -372,29 +266,20 @@ export const SpotifyPlayer = () => {
           </div>
         </div>
 
-        {/* Controls */}
         <div className="spotify-controls">
-          <button 
-            id="prev-btn" 
-            className="spotify-control"
-            onClick={handlePrev}
-          >
+          <button id="prev-btn" className="spotify-control" onClick={handlePrev}>
             <i className="fa-solid fa-backward-step"></i>
           </button>
 
-          <button 
-            id="play-pause-btn" 
-            className="spotify-control main"
-            onClick={handlePlayPause}
-          >
-            <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'}`}></i>
+          <button id="play-pause-btn" className="spotify-control main" onClick={handlePlayPause}>
+            {isBuffering ? (
+              <i className="fa-solid fa-circle-notch fa-spin"></i>
+            ) : (
+              <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'}`}></i>
+            )}
           </button>
 
-          <button 
-            id="next-btn" 
-            className="spotify-control"
-            onClick={handleNext}
-          >
+          <button id="next-btn" className="spotify-control" onClick={handleNext}>
             <i className="fa-solid fa-forward-step"></i>
           </button>
         </div>
